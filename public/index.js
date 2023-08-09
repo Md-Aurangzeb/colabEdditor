@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.getElementById('message');
-    const socket = new WebSocket('ws://localhost:3000');
+    const currentUrl = window.location.href;
+    const socketUrl = currentUrl.replace('http', 'ws');
+    const socket = new WebSocket(socketUrl);
 
     socket.onopen = (event) => {
         console.log('Connected to server.');
