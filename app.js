@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const server = require('http').createServer(app);
@@ -11,10 +12,9 @@ app.use(bodyParser.urlencoded({extended:true}));
 const wss = new WebSocket.Server({ server });
 
 const connectedClients = new Set();
-// let data="";
 
-
-mongoose.connect("mongodb://localhost:27017/dataDB").catch(err=>console.log(err));
+const uri = "mongodb+srv://"+process.env.USER_ID+":"+process.env.USER_PASSWORD+"@cluster0.zswynvi.mongodb.net";
+mongoose.connect(uri+"/dataDB").catch(err=>console.log(err));
 
 const dataSchema = new mongoose.Schema({
   _id : Number,
@@ -31,8 +31,7 @@ function broadcastMessage(message, sender) {
     }
   });
 }
-function updateNewConnectedClient(client){
-  const findMessage = async ()=>{
+async function updateNewConnectedClient(client){
     const foundMessage = await Data.findOne({_id:1});
     if(foundMessage)
       client.send(foundMessage.content);
@@ -44,8 +43,6 @@ function updateNewConnectedClient(client){
       insertData.save().catch(err=>console.log(err));
       client.send("");
     }
-  }
-    findMessage().catch(err=>console.log(err));
 }
 wss.on('connection', (ws) => {
   console.log('New client connected.');
@@ -54,13 +51,10 @@ wss.on('connection', (ws) => {
   // if(connectedClients.size!=1){
   //   ws.send(data);
   // }
-  ws.on('message', (message) => {
-    const updateData = async ()=>{
-      const updatedData = await Data.updateOne({_id : 1},{$set : {content : message}});
+  ws.on('message', async (message) => {
+      await Data.updateOne({_id : 1},{$set : {content : message}});
       console.log(`Received message: ${message}`);
       broadcastMessage(message, ws);
-    }
-    updateData().catch(err=>console.log());
   });
 
   ws.on('close', () => {
@@ -68,8 +62,8 @@ wss.on('connection', (ws) => {
     connectedClients.delete(ws);
   });
 });
-const PORT = process.env.PORT||3000;
-server.listen(PORT, () => {
-  console.log(`WebSocket hub server listening http://localhost:${PORT}!`);
+
+server.listen(process.env.PORT, () => {
+  console.log(`WebSocket hub server listening http://localhost:${process.env.PORT}`);
 });
 
